@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-neutral-50 text-neutral-900;
+  }
+}
+
+.fleur-de-leah-regular {
+  font-family: "Fleur De Leah", cursive;
+  font-weight: 400;
+  font-style: normal;
+}
+
+@layer utilities {
+  .pattern-overlay {
+    background-image: 
+      radial-gradient(circle at 1px 1px, rgba(212, 175, 55, 0.08) 1px, transparent 0),
+      radial-gradient(circle at 21px 21px, rgba(4, 120, 87, 0.08) 1px, transparent 0);
+    background-size: 40px 40px;
+  }
+  
+  .geometric-pattern {
+    background-image: 
+      repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(212, 175, 55, 0.02) 10px, rgba(212, 175, 55, 0.02) 20px),
+      repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(4, 120, 87, 0.02) 10px, rgba(4, 120, 87, 0.02) 20px);
+  }
+
+  .animated-gradient {
+    background: linear-gradient(
+      90deg,
+      #c29f2d 0%,
+      #fbbf24 15%,
+      #fcd34d 30%,
+      #9bdf1e 50%,
+      #077030 70%,
+      #084b19 85%,
+      #88ff00 100%
+    );
+    background-size: 300% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradient-shift 10s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+
+  @keyframes gradient-shift {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+}
+
