@@ -1,4 +1,3 @@
-import React from 'react';
 import type { Registration } from '../types';
 
 interface SuccessReceiptProps {

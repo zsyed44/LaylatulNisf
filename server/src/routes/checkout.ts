@@ -3,10 +3,17 @@ import Stripe from 'stripe';
 import { checkoutStartSchema } from '../validation.js';
 import type { StorageAdapter } from '../types.js';
 
-// Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-11-20.acacia',
-});
+// Initialize Stripe - lazy initialization to handle missing key
+function getStripe(): Stripe | null {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey) {
+    console.warn('STRIPE_SECRET_KEY is not set. Stripe functionality will be disabled.');
+    return null;
+  }
+  return new Stripe(secretKey, {
+    apiVersion: '2024-11-20.acacia',
+  });
+}
 
 export function createCheckoutRouter(storage: StorageAdapter) {
   const router = Router();
@@ -86,6 +93,15 @@ export function createCheckoutRouter(storage: StorageAdapter) {
         paymentMetadata.registrationId = String(registrationId);
       }
 
+      // Get Stripe instance
+      const stripe = getStripe();
+      if (!stripe) {
+        return res.status(500).json({
+          success: false,
+          error: 'Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.',
+        });
+      }
+
       // Create PaymentIntent
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100), // Convert to cents
@@ -122,6 +138,62 @@ export function createCheckoutRouter(storage: StorageAdapter) {
     }
   });
 
+  // Link PaymentIntent with registration
+  router.post('/link-payment-intent', async (req, res) => {
+    try {
+      const { paymentIntentId, registrationId } = req.body;
+
+      if (!paymentIntentId || typeof paymentIntentId !== 'string') {
+        return res.status(400).json({
+          success: false,
+          error: 'PaymentIntent ID is required',
+        });
+      }
+
+      if (!registrationId || typeof registrationId !== 'number') {
+        return res.status(400).json({
+          success: false,
+          error: 'Registration ID is required',
+        });
+      }
+
+      // Get Stripe instance
+      const stripe = getStripe();
+      if (!stripe) {
+        return res.status(500).json({
+          success: false,
+          error: 'Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.',
+        });
+      }
+
+      // Update PaymentIntent metadata with registrationId
+      await stripe.paymentIntents.update(paymentIntentId, {
+        metadata: {
+          registrationId: String(registrationId),
+        },
+      });
+
+      res.json({
+        success: true,
+        message: 'PaymentIntent linked to registration',
+      });
+    } catch (error: any) {
+      console.error('Error linking PaymentIntent:', error);
+      
+      if (error.type === 'StripeInvalidRequestError') {
+        return res.status(400).json({
+          success: false,
+          error: error.message || 'Invalid PaymentIntent',
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        error: 'Failed to link PaymentIntent',
+      });
+    }
+  });
+
   router.post('/confirm', async (req, res) => {
     try {
       const { registrationId } = req.body;
@@ -133,10 +205,9 @@ export function createCheckoutRouter(storage: StorageAdapter) {
         });
       }
 
-      // TODO: Verify payment with Stripe webhook/confirmation
-      // For now, simulate payment success
-      await storage.updateRegistrationStatus(registrationId, 'paid');
-
+      // Note: Payment status is now handled by webhooks
+      // This endpoint is kept for backward compatibility
+      // The webhook will update the registration status when payment succeeds
       const registration = await storage.getRegistration(registrationId);
       if (!registration) {
         return res.status(404).json({
@@ -148,7 +219,7 @@ export function createCheckoutRouter(storage: StorageAdapter) {
       res.json({
         success: true,
         data: registration,
-        message: 'Payment confirmed successfully',
+        message: 'Registration confirmed. Payment status will be updated via webhook.',
       });
     } catch (error) {
       console.error('Error confirming checkout:', error);

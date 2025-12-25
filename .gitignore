@@ -2,9 +2,14 @@ node_modules/
 dist/
 build/
 *.log
+.DS_Store
+
+# Environment variables - NEVER commit these!
 .env
 .env.local
-.DS_Store
+.env.*.local
+*.env
+!*.env.example
 
 # Server
 server/data/

@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js';
 import type { RegistrationFormData } from '../types';
 
 interface RegistrationCardProps {
   onSubmit: (data: RegistrationFormData) => Promise<void>;
   isLoading: boolean;
+  clientSecret: string | null;
 }
 
-export default function RegistrationCard({ onSubmit, isLoading }: RegistrationCardProps) {
+export default function RegistrationCard({ onSubmit, isLoading, clientSecret }: RegistrationCardProps) {
+  // Store references to Stripe and Elements
+  // These will be null if not wrapped in Elements provider (when clientSecret is not available)
+  const stripe = useStripe();
+  const elements = useElements();
   const [formData, setFormData] = useState<RegistrationFormData>({
     name: '',
     email: '',
@@ -18,6 +24,7 @@ export default function RegistrationCard({ onSubmit, isLoading }: RegistrationCa
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof RegistrationFormData, string>>>({});
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   const validate = (): boolean => {
     const newErrors: Partial<Record<keyof RegistrationFormData, string>> = {};
@@ -46,8 +53,48 @@ export default function RegistrationCard({ onSubmit, isLoading }: RegistrationCa
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validate()) {
+    setPaymentError(null);
+    
+    if (!validate()) {
+      return;
+    }
+
+    // Check if Stripe is ready
+    if (!stripe || !elements || !clientSecret) {
+      setPaymentError('Payment system is not ready. Please wait a moment and try again.');
+      return;
+    }
+
+    try {
+      // Get the PaymentElement
+      const paymentElement = elements.getElement('payment');
+      if (!paymentElement) {
+        setPaymentError('Payment form is not ready. Please refresh the page.');
+        return;
+      }
+
+      // Confirm payment with Stripe
+      const { error: confirmError } = await stripe.confirmPayment({
+        elements,
+        clientSecret,
+        confirmParams: {
+          return_url: `${window.location.origin}${window.location.pathname}`,
+        },
+        redirect: 'if_required', // Only redirect if required (e.g., 3D Secure)
+      });
+
+      // Handle payment errors
+      if (confirmError) {
+        // Payment failed - show error to user
+        setPaymentError(confirmError.message || 'Payment failed. Please try again.');
+        return;
+      }
+
+      // Payment succeeded - proceed with registration
       await onSubmit(formData);
+    } catch (err: any) {
+      setPaymentError(err.message || 'An error occurred during payment. Please try again.');
+      console.error('Payment error:', err);
     }
   };
 
@@ -169,6 +216,32 @@ export default function RegistrationCard({ onSubmit, isLoading }: RegistrationCa
           </div>
         </div>
 
+        {/* PaymentElement - Stripe payment form */}
+        <div className="border border-neutral-300 rounded-lg p-4">
+          <label className="block text-sm font-medium text-neutral-700 mb-3">
+            Payment Details <span className="text-red-500">*</span>
+          </label>
+          {!clientSecret ? (
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                Payment system is initializing. Please wait...
+              </p>
+            </div>
+          ) : stripe && elements ? (
+            <PaymentElement />
+          ) : (
+            <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-lg">
+              <p className="text-sm text-neutral-600">Loading payment form...</p>
+            </div>
+          )}
+          {/* Display payment errors */}
+          {paymentError && (
+            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{paymentError}</p>
+            </div>
+          )}
+        </div>
+
         <div>
           <label className="flex items-start gap-3">
             <input
@@ -188,14 +261,14 @@ export default function RegistrationCard({ onSubmit, isLoading }: RegistrationCa
 
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={isLoading || !stripe || !elements || !clientSecret}
           className={`w-full py-3 px-6 rounded-lg font-semibold text-white transition-colors ${
-            isLoading
+            isLoading || !stripe || !elements || !clientSecret
               ? 'bg-neutral-400 cursor-not-allowed'
               : 'bg-gradient-to-r from-emerald-700 to-emerald-800 hover:from-emerald-800 hover:to-emerald-900 active:from-emerald-900 active:to-emerald-950'
           }`}
         >
-          {isLoading ? 'Processing...' : `Register & Pay $${total.toFixed(2)}`}
+          {isLoading ? 'Processing Payment...' : `Register & Pay $${total.toFixed(2)}`}
         </button>
       </form>
     </div>

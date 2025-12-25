@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import type { StorageAdapter } from '../types.js';
+import { authenticate } from '../middleware/auth.js';
 
 export function createRegistrationsRouter(storage: StorageAdapter) {
   const router = Router();
 
-  // TODO: Add authentication middleware here
-  // Example: router.use(authenticateAdmin);
+  // Protect all registration routes with authentication
+  router.use(authenticate);
 
   router.get('/', async (req, res) => {
     try {
