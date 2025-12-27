@@ -5,20 +5,20 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    // Vercel passes the path segments in req.query
-    // For /api/checkout/create-payment-intent, req.query will have the path segments
+    // Extract path from Vercel's catch-all route
+    // For /api/checkout/create-payment-intent, req.query.path will be ['checkout', 'create-payment-intent']
     let path = '/';
     
-    if (req.query.path) {
-      // Handle array of path segments (e.g., ['checkout', 'create-payment-intent'])
+    if (req.query && req.query.path) {
       if (Array.isArray(req.query.path)) {
         path = '/' + req.query.path.join('/');
-      } else {
+      } else if (typeof req.query.path === 'string') {
         path = '/' + req.query.path;
       }
     } else if (req.url) {
-      // Fallback to req.url if query.path is not available
-      path = req.url.replace(/^\/api/, '') || '/';
+      // Fallback: extract from URL
+      const urlPath = req.url.split('?')[0]; // Remove query string
+      path = urlPath.replace(/^\/api/, '') || '/';
     }
     
     // Ensure path starts with /
@@ -26,26 +26,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       path = '/' + path;
     }
     
+    // Debug logging (remove in production if needed)
+    console.log('Request:', {
+      method: req.method,
+      url: req.url,
+      query: req.query,
+      path: path,
+    });
+    
     // Create Express-compatible request object
-    const expressReq = {
-      method: req.method || 'GET',
+    // Vercel's Request/Response are compatible with Express, but we need to set the path correctly
+    const expressReq = Object.assign(req, {
       url: path,
       originalUrl: path,
-      path: path.split('?')[0], // Remove query string from path
-      headers: req.headers || {},
-      body: req.body,
-      query: { ...req.query },
-      params: {},
-      // Remove path from query to avoid conflicts
-    } as any;
+      path: path.split('?')[0],
+      baseUrl: '',
+      method: req.method || 'GET',
+    });
     
-    // Remove path from query object
-    delete expressReq.query.path;
+    // Clean up query object
+    const cleanQuery = { ...req.query };
+    delete cleanQuery.path;
+    expressReq.query = cleanQuery;
     
-    // Handle Express app
-    return app(expressReq, res as any);
+    // Call Express app directly - Vercel's Request/Response should work
+    return app(expressReq as any, res as any);
   } catch (error: any) {
-    // Ensure we always return JSON, even on unexpected errors
     console.error('Serverless function error:', error);
     if (!res.headersSent) {
       res.status(500).json({
