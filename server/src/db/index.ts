@@ -1,9 +1,9 @@
-import { SqliteAdapter } from './sqlite-adapter.js';
+import { PostgresAdapter } from './postgres-adapter.js';
 import { SheetsAdapter } from './sheets-adapter.js';
 import type { StorageAdapter } from '../types.js';
 
 export function createStorageAdapter(): StorageAdapter {
-  const storageMode = process.env.STORAGE_MODE || 'sqlite';
+  const storageMode = process.env.STORAGE_MODE || 'postgres';
 
   if (storageMode === 'sheets') {
     const clientEmail = process.env.GOOGLE_SHEETS_CLIENT_EMAIL;
@@ -17,8 +17,12 @@ export function createStorageAdapter(): StorageAdapter {
     return new SheetsAdapter(clientEmail, privateKey, spreadsheetId);
   }
 
-  // Default to SQLite
-  const dbPath = process.env.DATABASE_URL || './data/registrations.db';
-  return new SqliteAdapter(dbPath);
+  // Default to Postgres (Neon)
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL environment variable is required. Set it to your Neon Postgres connection string.');
+  }
+
+  return new PostgresAdapter(databaseUrl);
 }
 

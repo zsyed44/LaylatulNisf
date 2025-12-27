@@ -45,7 +45,7 @@ LaylatulNisf/
 ## Prerequisites
 
 - Node.js 18+ and npm
-- SQLite3 (usually comes with Node.js)
+- Neon Postgres database (free tier available at https://neon.tech)
 
 ## Setup Instructions
 
@@ -59,25 +59,35 @@ npm run install:all
 
 This will install dependencies for the root, server, and client.
 
-### 2. Configure Environment Variables
+### 2. Set Up Neon Postgres Database
+
+1. Create a free account at https://neon.tech
+2. Create a new project
+3. Copy your connection string (format: `postgresql://user:password@host/database?sslmode=require`)
+4. Run the schema to create tables:
+
+```bash
+# Using psql (if installed)
+psql "your-connection-string" -f db/schema.sql
+
+# Or using Neon's SQL editor in the dashboard
+# Copy and paste the contents of db/schema.sql
+```
+
+### 3. Configure Environment Variables
 
 Copy the example environment file:
 
 ```bash
-cp server/.env.example server/.env
+cp .env.example .env
 ```
 
-Edit `server/.env` if needed (defaults should work for local development).
-
-### 3. Initialize Database
-
-```bash
-cd server
-npm run init-db
-cd ..
-```
-
-This creates the SQLite database and tables.
+Edit `.env` and set:
+- `DATABASE_URL` - Your Neon Postgres connection string
+- `STRIPE_SECRET_KEY` - Your Stripe secret key (test keys for development)
+- `STRIPE_WEBHOOK_SECRET` - Stripe webhook signing secret
+- `ADMIN_PASSWORD_HASH` - Generate using: `npx tsx server/src/scripts/generate-password-hash.ts`
+- `JWT_SECRET` - Generate using: `node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"`
 
 ### 4. Run the Application
 
@@ -119,33 +129,38 @@ npm run dev:client
 
 ### Admin Endpoints
 
-- `GET /api/registrations` - List all registrations
-- `GET /api/registrations/:id` - Get specific registration
-
-**Note:** Admin endpoints currently have no authentication. Add authentication middleware before production use (see TODO comments in code).
+- `GET /api/health` - Health check (returns `{ ok: true }`)
+- `POST /api/auth/login` - Admin login
+- `GET /api/auth/verify` - Verify JWT token
+- `GET /api/registrations` - List all registrations (protected, requires JWT)
+- `GET /api/registrations/:id` - Get specific registration (protected, requires JWT)
+- `POST /api/checkout/create-payment-intent` - Create Stripe PaymentIntent
+- `POST /api/webhooks/stripe` - Stripe webhook endpoint
 
 ## Database Schema
 
-The `registrations` table includes:
+The `registrations` table (Postgres) includes:
 
-- `id` (INTEGER PRIMARY KEY)
-- `name` (TEXT)
-- `email` (TEXT)
+- `id` (SERIAL PRIMARY KEY)
+- `name` (TEXT NOT NULL)
+- `email` (TEXT NOT NULL)
 - `phone` (TEXT, nullable)
-- `qty` (INTEGER)
+- `qty` (INTEGER NOT NULL)
 - `dietary` (TEXT, nullable)
 - `notes` (TEXT, nullable)
-- `status` (TEXT: 'pending' | 'paid')
-- `createdAt` (TEXT: ISO datetime)
+- `status` (TEXT: 'pending' | 'paid', default 'pending')
+- `created_at` (TIMESTAMP WITH TIME ZONE, default NOW())
+
+See `db/schema.sql` for the full schema with indexes.
 
 ## Storage Adapters
 
 The application uses a storage adapter pattern for flexibility:
 
-- **SqliteAdapter** (default): Stores data in SQLite
-- **SheetsAdapter** (placeholder): Future Google Sheets integration
+- **PostgresAdapter** (default): Stores data in Neon Postgres
+- **SheetsAdapter** (optional): Google Sheets integration
 
-To switch storage backends, set `STORAGE_MODE=sheets` in `.env` and configure Google Sheets credentials (not yet implemented).
+To switch storage backends, set `STORAGE_MODE=sheets` in `.env` and configure Google Sheets credentials.
 
 ## Future Integrations
 
@@ -192,15 +207,49 @@ cd server
 npm run build
 ```
 
-### Database Location
+## Deployment to Vercel
 
-SQLite database is stored at: `server/data/registrations.db` (created automatically)
+### Prerequisites
+- Vercel account
+- Neon Postgres database (same as local dev)
+
+### Steps
+
+1. **Push code to GitHub**
+
+2. **Import project to Vercel**
+   - Framework Preset: **Vite**
+   - Root Directory: (leave empty)
+
+3. **Add Environment Variables in Vercel Dashboard:**
+   - `DATABASE_URL` - Your Neon Postgres connection string
+   - `VITE_STRIPE_PUBLISHABLE_KEY` - Stripe publishable key (for frontend build)
+   - `STRIPE_SECRET_KEY` - Stripe secret key
+   - `STRIPE_WEBHOOK_SECRET` - Stripe webhook signing secret
+   - `ADMIN_USERNAME` - Admin username (default: "admin")
+   - `ADMIN_PASSWORD_HASH` - bcrypt hash of admin password
+   - `JWT_SECRET` - JWT signing secret
+   - `CLIENT_URL` - Your Vercel frontend URL (e.g., `https://your-app.vercel.app`)
+
+4. **Deploy**
+
+5. **Configure Stripe Webhook:**
+   - URL: `https://your-app.vercel.app/api/webhooks/stripe`
+   - Events: `payment_intent.succeeded`, `payment_intent.processing`, `payment_intent.payment_failed`
+
+### Smoke Test Checklist
+
+After deployment:
+- [ ] Visit `https://your-app.vercel.app/api/health` - should return `{ ok: true }`
+- [ ] Submit a test registration form
+- [ ] Check admin page (login with credentials)
+- [ ] Verify registration appears in admin view
 
 ## Tech Stack
 
 - **Frontend:** React 18, TypeScript, Vite, Tailwind CSS
-- **Backend:** Node.js, Express, TypeScript
-- **Database:** SQLite (better-sqlite3)
+- **Backend:** Node.js, Express, TypeScript (Vercel Serverless Functions)
+- **Database:** Neon Postgres (pg driver)
 - **Validation:** Zod
 - **Styling:** Tailwind CSS with custom gold color palette
 

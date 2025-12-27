@@ -37,7 +37,7 @@ app.use('/checkout', createCheckoutRouter(getStorage()));
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ success: true, message: 'Server is running' });
+  res.json({ ok: true });
 });
 
 export default app;
