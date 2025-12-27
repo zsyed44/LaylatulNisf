@@ -1,40 +1,83 @@
-// Vercel serverless function for /api/webhooks/stripe
-// This needs raw body handling for Stripe signature verification
-import Stripe from 'stripe';
-import dotenv from 'dotenv';
-import { createStorageAdapter } from '../../server/src/db/index.js';
+// Stripe webhook endpoint - handles payment events
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import Stripe from 'stripe';
+import { getStripe } from '../_lib/stripe.js';
+import { updateRegistrationStatus } from '../_lib/registrations.js';
 
-dotenv.config();
-
-// Initialize storage adapter
-let storage: ReturnType<typeof createStorageAdapter> | null = null;
-function getStorage() {
-  if (!storage) {
-    storage = createStorageAdapter();
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Only allow POST
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
-  return storage;
+
+  const sig = req.headers['stripe-signature'] as string;
+
+  if (!sig) {
+    console.error('Missing Stripe signature');
+    return res.status(400).json({ error: 'Missing Stripe signature' });
+  }
+
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    console.error('Missing STRIPE_WEBHOOK_SECRET environment variable');
+    return res.status(500).json({ error: 'Webhook secret not configured' });
+  }
+
+  // Get raw body - Vercel provides it as a string or Buffer
+  let rawBody: Buffer;
+  if (typeof req.body === 'string') {
+    rawBody = Buffer.from(req.body, 'utf8');
+  } else if (Buffer.isBuffer(req.body)) {
+    rawBody = req.body;
+  } else {
+    // If body was parsed as JSON, we need to reconstruct it
+    rawBody = Buffer.from(JSON.stringify(req.body || {}), 'utf8');
+  }
+
+  let event: Stripe.Event;
+
+  try {
+    const stripe = getStripe();
+    event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
+  } catch (err: any) {
+    console.error('Webhook signature verification failed:', err.message);
+    return res.status(400).json({ error: `Webhook Error: ${err.message}` });
+  }
+
+  // Handle the event
+  try {
+    switch (event.type) {
+      case 'payment_intent.succeeded':
+        await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent);
+        break;
+
+      case 'payment_intent.processing':
+        await handlePaymentIntentProcessing(event.data.object as Stripe.PaymentIntent);
+        break;
+
+      case 'payment_intent.payment_failed':
+        await handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
+        break;
+
+      default:
+        console.log(`Unhandled event type: ${event.type}`);
+    }
+
+    res.setHeader('Content-Type', 'application/json');
+    res.status(200).json({ received: true });
+  } catch (error: any) {
+    console.error('Error handling webhook event:', error);
+    res.status(500).json({
+      received: false,
+      error: error.message || 'Error processing webhook',
+    });
+  }
 }
 
-// Initialize Stripe
-function getStripe(): Stripe {
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-  if (!secretKey) {
-    throw new Error('STRIPE_SECRET_KEY is not set. Webhooks require Stripe to be configured.');
-  }
-  return new Stripe(secretKey, {
-    apiVersion: '2024-11-20.acacia',
-  });
-}
-
-// Import webhook handlers
-async function handlePaymentIntentSucceeded(
-  paymentIntent: Stripe.PaymentIntent,
-  storage: ReturnType<typeof createStorageAdapter>
-) {
+async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
   console.log('PaymentIntent succeeded:', paymentIntent.id);
   const registrationId = paymentIntent.metadata?.registrationId;
-  
+
   if (!registrationId) {
     console.warn(`PaymentIntent ${paymentIntent.id} has no registrationId in metadata`);
     return;
@@ -46,7 +89,7 @@ async function handlePaymentIntentSucceeded(
       console.error(`Invalid registrationId in PaymentIntent metadata: ${registrationId}`);
       return;
     }
-    await storage.updateRegistrationStatus(id, 'paid');
+    await updateRegistrationStatus(id, 'paid');
     console.log(`Registration ${id} marked as paid via webhook`);
   } catch (error) {
     console.error(`Error updating registration ${registrationId} to paid:`, error);
@@ -54,13 +97,10 @@ async function handlePaymentIntentSucceeded(
   }
 }
 
-async function handlePaymentIntentProcessing(
-  paymentIntent: Stripe.PaymentIntent,
-  storage: ReturnType<typeof createStorageAdapter>
-) {
+async function handlePaymentIntentProcessing(paymentIntent: Stripe.PaymentIntent) {
   console.log('PaymentIntent processing:', paymentIntent.id);
   const registrationId = paymentIntent.metadata?.registrationId;
-  
+
   if (!registrationId) {
     console.warn(`PaymentIntent ${paymentIntent.id} has no registrationId in metadata`);
     return;
@@ -79,13 +119,10 @@ async function handlePaymentIntentProcessing(
   }
 }
 
-async function handlePaymentIntentFailed(
-  paymentIntent: Stripe.PaymentIntent,
-  storage: ReturnType<typeof createStorageAdapter>
-) {
+async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
   console.log('PaymentIntent failed:', paymentIntent.id);
   const registrationId = paymentIntent.metadata?.registrationId;
-  
+
   if (!registrationId) {
     console.warn(`PaymentIntent ${paymentIntent.id} has no registrationId in metadata`);
     return;
@@ -101,78 +138,6 @@ async function handlePaymentIntentFailed(
   } catch (error) {
     console.error(`Error handling failed payment for registration ${registrationId}:`, error);
     throw error;
-  }
-}
-
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Only allow POST
-  if (req.method !== 'POST') {
-    return res.status(405).send('Method not allowed');
-  }
-
-  const sig = req.headers['stripe-signature'] as string;
-
-  if (!sig) {
-    console.error('Missing Stripe signature');
-    return res.status(400).send('Missing Stripe signature');
-  }
-
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!webhookSecret) {
-    console.error('Missing STRIPE_WEBHOOK_SECRET environment variable');
-    return res.status(500).send('Webhook secret not configured');
-  }
-
-  // Get raw body - Vercel provides it as a string or Buffer
-  let rawBody: Buffer;
-  if (typeof req.body === 'string') {
-    rawBody = Buffer.from(req.body, 'utf8');
-  } else if (Buffer.isBuffer(req.body)) {
-    rawBody = req.body;
-  } else {
-    // If body was parsed as JSON, we need to reconstruct it
-    // This shouldn't happen if bodyParser is disabled, but handle it anyway
-    rawBody = Buffer.from(JSON.stringify(req.body), 'utf8');
-  }
-
-  let event: Stripe.Event;
-
-  try {
-    const stripe = getStripe();
-    event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
-  } catch (err: any) {
-    console.error('Webhook signature verification failed:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  // Handle the event
-  try {
-    const storageInstance = getStorage();
-    
-    switch (event.type) {
-      case 'payment_intent.succeeded':
-        await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent, storageInstance);
-        break;
-
-      case 'payment_intent.processing':
-        await handlePaymentIntentProcessing(event.data.object as Stripe.PaymentIntent, storageInstance);
-        break;
-
-      case 'payment_intent.payment_failed':
-        await handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent, storageInstance);
-        break;
-
-      default:
-        console.log(`Unhandled event type: ${event.type}`);
-    }
-
-    res.json({ received: true });
-  } catch (error) {
-    console.error('Error handling webhook event:', error);
-    res.status(500).json({ 
-      received: false, 
-      error: 'Error processing webhook' 
-    });
   }
 }
 

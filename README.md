@@ -253,6 +253,39 @@ After deployment:
 - **Validation:** Zod
 - **Styling:** Tailwind CSS with custom gold color palette
 
+## Verification
+
+After deployment to Vercel, verify the backend is working:
+
+### 1. Health Check
+```bash
+curl https://your-app.vercel.app/api/health
+```
+Expected response: `{"ok":true}`
+
+### 2. Test PaymentIntent Creation
+```bash
+curl -X POST https://your-app.vercel.app/api/checkout/create-payment-intent \
+  -H "Content-Type: application/json" \
+  -d '{"amount": 60, "currency": "usd"}'
+```
+Expected response: `{"success":true,"data":{"clientSecret":"pi_...","paymentIntentId":"pi_..."}}`
+
+### 3. Webhook URL
+Configure in Stripe Dashboard:
+- URL: `https://your-app.vercel.app/api/webhooks/stripe`
+- Events: `payment_intent.succeeded`, `payment_intent.processing`, `payment_intent.payment_failed`
+
+### 4. Required Environment Variables (Vercel)
+- `DATABASE_URL` - Neon Postgres connection string
+- `VITE_STRIPE_PUBLISHABLE_KEY` - Stripe publishable key (build-time)
+- `STRIPE_SECRET_KEY` - Stripe secret key
+- `STRIPE_WEBHOOK_SECRET` - Stripe webhook signing secret
+- `ADMIN_USERNAME` - Admin username
+- `ADMIN_PASSWORD_HASH` - bcrypt hash of admin password
+- `JWT_SECRET` - JWT signing secret
+- `CLIENT_URL` - Your Vercel frontend URL
+
 ## License
 
 ISC
