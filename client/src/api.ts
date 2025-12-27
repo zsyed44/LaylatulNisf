@@ -29,11 +29,27 @@ export async function createPaymentIntent(
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to create PaymentIntent');
+    let errorMessage = 'Failed to create PaymentIntent';
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorMessage;
+    } catch (e) {
+      // If response is not JSON, use status text
+      errorMessage = response.statusText || `HTTP ${response.status}: Failed to create PaymentIntent`;
+    }
+    throw new Error(errorMessage);
   }
 
-  return response.json();
+  const text = await response.text();
+  if (!text) {
+    throw new Error('Empty response from server');
+  }
+  
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    throw new Error('Invalid JSON response from server');
+  }
 }
 
 export async function startCheckout(data: RegistrationFormData): Promise<CheckoutResponse> {
@@ -46,11 +62,26 @@ export async function startCheckout(data: RegistrationFormData): Promise<Checkou
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to start checkout');
+    let errorMessage = 'Failed to start checkout';
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorMessage;
+    } catch (e) {
+      errorMessage = response.statusText || `HTTP ${response.status}: Failed to start checkout`;
+    }
+    throw new Error(errorMessage);
   }
 
-  return response.json();
+  const text = await response.text();
+  if (!text) {
+    throw new Error('Empty response from server');
+  }
+  
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    throw new Error('Invalid JSON response from server');
+  }
 }
 
 export async function confirmCheckout(registrationId: number): Promise<Registration> {
@@ -63,12 +94,27 @@ export async function confirmCheckout(registrationId: number): Promise<Registrat
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to confirm checkout');
+    let errorMessage = 'Failed to confirm checkout';
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorMessage;
+    } catch (e) {
+      errorMessage = response.statusText || `HTTP ${response.status}: Failed to confirm checkout`;
+    }
+    throw new Error(errorMessage);
   }
 
-  const result = await response.json();
-  return result.data;
+  const text = await response.text();
+  if (!text) {
+    throw new Error('Empty response from server');
+  }
+  
+  try {
+    const result = JSON.parse(text);
+    return result.data;
+  } catch (e) {
+    throw new Error('Invalid JSON response from server');
+  }
 }
 
 export interface RegistrationsResponse {
@@ -97,11 +143,26 @@ export async function getAllRegistrations(): Promise<RegistrationsResponse> {
       localStorage.removeItem('adminToken');
       throw new Error('Session expired. Please login again.');
     }
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch registrations');
+    let errorMessage = 'Failed to fetch registrations';
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorMessage;
+    } catch (e) {
+      errorMessage = response.statusText || `HTTP ${response.status}: Failed to fetch registrations`;
+    }
+    throw new Error(errorMessage);
   }
 
-  return response.json();
+  const text = await response.text();
+  if (!text) {
+    throw new Error('Empty response from server');
+  }
+  
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    throw new Error('Invalid JSON response from server');
+  }
 }
 
 export interface LoginResponse {
@@ -122,11 +183,26 @@ export async function login(username: string, password: string): Promise<LoginRe
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Login failed');
+    let errorMessage = 'Login failed';
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorMessage;
+    } catch (e) {
+      errorMessage = response.statusText || `HTTP ${response.status}: Login failed`;
+    }
+    throw new Error(errorMessage);
   }
 
-  return response.json();
+  const text = await response.text();
+  if (!text) {
+    throw new Error('Empty response from server');
+  }
+  
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    throw new Error('Invalid JSON response from server');
+  }
 }
 
 export async function verifyToken(): Promise<{ success: boolean; data: { username: string; role: string } }> {
@@ -146,9 +222,25 @@ export async function verifyToken(): Promise<{ success: boolean; data: { usernam
 
   if (!response.ok) {
     localStorage.removeItem('adminToken');
-    throw new Error('Token verification failed');
+    let errorMessage = 'Token verification failed';
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorMessage;
+    } catch (e) {
+      errorMessage = response.statusText || `HTTP ${response.status}: Token verification failed`;
+    }
+    throw new Error(errorMessage);
   }
 
-  return response.json();
+  const text = await response.text();
+  if (!text) {
+    throw new Error('Empty response from server');
+  }
+  
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    throw new Error('Invalid JSON response from server');
+  }
 }
 
