@@ -4,22 +4,24 @@ import bcrypt from 'bcrypt';
 import { createToken, getAdminCredentials } from '../_lib/auth.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Handle OPTIONS preflight
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    return res.status(200).json({ ok: true });
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
   try {
+    // Handle OPTIONS preflight
+    if (req.method === 'OPTIONS') {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(200).json({ ok: true });
+    }
+
+    if (req.method !== 'POST') {
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
     const { username, password } = req.body;
 
     if (!username || !password) {
+      res.setHeader('Content-Type', 'application/json');
       return res.status(400).json({
         success: false,
         error: 'Username and password are required',
@@ -30,6 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Verify username
     if (username !== adminUsername) {
+      res.setHeader('Content-Type', 'application/json');
       return res.status(401).json({
         success: false,
         error: 'Invalid credentials',
@@ -38,6 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Verify password
     if (!passwordHash) {
+      res.setHeader('Content-Type', 'application/json');
       return res.status(500).json({
         success: false,
         error: 'Server configuration error: password hash not set',
@@ -46,6 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const isValid = await bcrypt.compare(password, passwordHash);
     if (!isValid) {
+      res.setHeader('Content-Type', 'application/json');
       return res.status(401).json({
         success: false,
         error: 'Invalid credentials',
@@ -65,6 +70,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (error: any) {
     console.error('Login error:', error);
+    res.setHeader('Content-Type', 'application/json');
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to authenticate',

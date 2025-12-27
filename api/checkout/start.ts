@@ -3,19 +3,20 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createRegistration } from '../_lib/registrations.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Handle OPTIONS preflight
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    return res.status(200).json({ ok: true });
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
   try {
+    // Handle OPTIONS preflight
+    if (req.method === 'OPTIONS') {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(200).json({ ok: true });
+    }
+
+    if (req.method !== 'POST') {
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
     const { name, email, phone, qty, dietary, notes, consent } = req.body;
 
     // Basic validation
@@ -55,6 +56,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (error: any) {
     console.error('Error starting checkout:', error);
+    res.setHeader('Content-Type', 'application/json');
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to start checkout',

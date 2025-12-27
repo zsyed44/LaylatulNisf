@@ -5,23 +5,27 @@ import { getStripe } from '../_lib/stripe.js';
 import { updateRegistrationStatus } from '../_lib/registrations.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Only allow POST
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  try {
+    // Only allow POST
+    if (req.method !== 'POST') {
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
 
-  const sig = req.headers['stripe-signature'] as string;
+    const sig = req.headers['stripe-signature'] as string;
 
-  if (!sig) {
-    console.error('Missing Stripe signature');
-    return res.status(400).json({ error: 'Missing Stripe signature' });
-  }
+    if (!sig) {
+      console.error('Missing Stripe signature');
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(400).json({ error: 'Missing Stripe signature' });
+    }
 
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!webhookSecret) {
-    console.error('Missing STRIPE_WEBHOOK_SECRET environment variable');
-    return res.status(500).json({ error: 'Webhook secret not configured' });
-  }
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    if (!webhookSecret) {
+      console.error('Missing STRIPE_WEBHOOK_SECRET environment variable');
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(500).json({ error: 'Webhook secret not configured' });
+    }
 
   // Get raw body - Vercel provides it as a string or Buffer
   let rawBody: Buffer;
@@ -41,6 +45,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
   } catch (err: any) {
     console.error('Webhook signature verification failed:', err.message);
+    res.setHeader('Content-Type', 'application/json');
     return res.status(400).json({ error: `Webhook Error: ${err.message}` });
   }
 
@@ -67,6 +72,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(200).json({ received: true });
   } catch (error: any) {
     console.error('Error handling webhook event:', error);
+    res.setHeader('Content-Type', 'application/json');
     res.status(500).json({
       received: false,
       error: error.message || 'Error processing webhook',

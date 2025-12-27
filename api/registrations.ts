@@ -4,22 +4,24 @@ import { getAllRegistrations } from './_lib/registrations.js';
 import { verifyToken } from './_lib/auth.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Handle OPTIONS preflight
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    return res.status(200).json({ ok: true });
-  }
-
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
   try {
+    // Handle OPTIONS preflight
+    if (req.method === 'OPTIONS') {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(200).json({ ok: true });
+    }
+
+    if (req.method !== 'GET') {
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
     // Verify authentication
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.setHeader('Content-Type', 'application/json');
       return res.status(401).json({
         success: false,
         error: 'Authentication required',
@@ -38,6 +40,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       data: registrations,
     });
   } catch (error: any) {
+    console.error('Error fetching registrations:', error);
+    res.setHeader('Content-Type', 'application/json');
+    
     if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
       return res.status(401).json({
         success: false,
@@ -45,7 +50,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    console.error('Error fetching registrations:', error);
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to fetch registrations',

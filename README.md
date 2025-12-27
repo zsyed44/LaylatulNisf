@@ -237,13 +237,31 @@ npm run build
    - URL: `https://your-app.vercel.app/api/webhooks/stripe`
    - Events: `payment_intent.succeeded`, `payment_intent.processing`, `payment_intent.payment_failed`
 
-### Smoke Test Checklist
+### Verification Steps
 
-After deployment:
-- [ ] Visit `https://your-app.vercel.app/api/health` - should return `{ ok: true }`
-- [ ] Submit a test registration form
-- [ ] Check admin page (login with credentials)
-- [ ] Verify registration appears in admin view
+After deployment, verify the backend is working:
+
+1. **Health Check:**
+   ```bash
+   curl https://your-app.vercel.app/api/health
+   ```
+   Expected: `{"ok":true}`
+
+2. **Test PaymentIntent Creation:**
+   ```bash
+   curl -X POST https://your-app.vercel.app/api/checkout/create-payment-intent \
+     -H "Content-Type: application/json" \
+     -d '{"amount": 6000, "currency": "cad"}'
+   ```
+   Expected: `{"success":true,"data":{"clientSecret":"pi_...","paymentIntentId":"pi_..."}}`
+   Note: Amount is in smallest currency unit (6000 = $60.00 CAD)
+
+3. **Frontend Tests:**
+   - [ ] Payment system initializes (no "Unexpected end of JSON input" error)
+   - [ ] Payment form loads without hanging
+   - [ ] Submit test registration form
+   - [ ] Check admin page (login with credentials)
+   - [ ] Verify registration appears in admin view
 
 ## Tech Stack
 
@@ -267,9 +285,10 @@ Expected response: `{"ok":true}`
 ```bash
 curl -X POST https://your-app.vercel.app/api/checkout/create-payment-intent \
   -H "Content-Type: application/json" \
-  -d '{"amount": 60, "currency": "usd"}'
+  -d '{"amount": 60, "currency": "cad"}'
 ```
 Expected response: `{"success":true,"data":{"clientSecret":"pi_...","paymentIntentId":"pi_..."}}`
+Note: Amount is in dollars (60 = $60.00). Backend converts to cents automatically.
 
 ### 3. Webhook URL
 Configure in Stripe Dashboard:
