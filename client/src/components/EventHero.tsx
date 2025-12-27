@@ -1,10 +1,10 @@
 export default function EventHero() {
   return (
-    <div className="relative bg-gradient-to-br from-neutral-900 via-emerald-950 to-neutral-900 text-white py-20 px-4 pattern-overlay overflow-hidden">
+    <div className="relative bg-gradient-to-br from-neutral-900 via-emerald-950 to-neutral-900 text-white pt-24 pb-20 px-4 pattern-overlay overflow-hidden">
       <div className="max-w-4xl mx-auto text-center">
         {/* Logo placeholder - replace with your logo image */}
         {/* <img src="/logo.png" alt="Laylatul Nisf Logo" className="h-24 md:h-32 mx-auto mb-6" /> */}
-        <h1 className="fleur-de-leah-regular text-7xl md:text-8xl lg:text-9xl xl:text-[10rem] mb-4 pb-6 leading-[1.15] animated-gradient">
+        <h1 className="fleur-de-leah-regular text-7xl md:text-8xl lg:text-9xl xl:text-[10rem] mb-4 pb-6 pt-6 md:pt-8 leading-[1.15] animated-gradient">
           Laylatul Nisf
         </h1>
         <p className="text-xl md:text-2xl text-neutral-500 mb-8 font-light">
