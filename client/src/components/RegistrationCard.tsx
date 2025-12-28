@@ -232,11 +232,11 @@ export default function RegistrationCard({ onSubmit, isLoading, clientSecret, on
         <div className="bg-gradient-to-br from-gold-50 to-emerald-50 border-2 border-emerald-300 rounded-lg p-4">
           <div className="flex justify-between items-center mb-2">
             <span className="text-neutral-700">Tickets ({formData.qty})</span>
-            <span className="font-semibold">${ticketPrice.toFixed(2)} each</span>
+            <span className="font-semibold">${ticketPrice.toFixed(2)} CAD each</span>
           </div>
           <div className="flex justify-between items-center pt-2 border-t border-emerald-300">
             <span className="text-lg font-semibold text-neutral-900">Total</span>
-            <span className="text-2xl font-bold bg-gradient-to-r from-gold-700 to-emerald-700 bg-clip-text text-transparent">${total.toFixed(2)}</span>
+            <span className="text-2xl font-bold bg-gradient-to-r from-gold-700 to-emerald-700 bg-clip-text text-transparent">${total.toFixed(2)} CAD</span>
           </div>
         </div>
 
@@ -292,7 +292,7 @@ export default function RegistrationCard({ onSubmit, isLoading, clientSecret, on
               : 'bg-gradient-to-r from-emerald-700 to-emerald-800 hover:from-emerald-800 hover:to-emerald-900 active:from-emerald-900 active:to-emerald-950'
           }`}
         >
-          {isLoading ? 'Processing Payment...' : `Register & Pay $${total.toFixed(2)}`}
+          {isLoading ? 'Processing Payment...' : `Register & Pay $${total.toFixed(2)} CAD`}
         </button>
       </form>
     </div>

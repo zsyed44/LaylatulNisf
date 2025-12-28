@@ -134,7 +134,7 @@ export default function AdminPage() {
           </div>
           <div className="bg-emerald-50 rounded-lg shadow p-6 border border-emerald-200">
             <div className="text-sm text-emerald-700 mb-1">Revenue</div>
-            <div className="text-3xl font-bold text-emerald-800">${stats.totalRevenue.toFixed(2)}</div>
+            <div className="text-3xl font-bold text-emerald-800">${stats.totalRevenue.toFixed(2)} CAD</div>
           </div>
         </div>
 
@@ -251,7 +251,7 @@ export default function AdminPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
-                        ${(reg.qty * 60).toFixed(2)}
+                        ${(reg.qty * 60).toFixed(2)} CAD
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">
                         {formatDate(reg.createdAt)}

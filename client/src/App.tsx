@@ -194,7 +194,7 @@ function App() {
       const amount = quantity * TICKET_PRICE;
       const response = await createPaymentIntent({
         amount,
-        currency: 'usd',
+        currency: 'cad',
       });
       
       setClientSecret(response.data.clientSecret);
@@ -380,7 +380,7 @@ function App() {
         // This allows Elements to initialize while PaymentIntent is being created
         mode: 'payment',
         amount: TICKET_PRICE * 100, // Convert to cents (default to 1 ticket)
-        currency: 'usd',
+        currency: 'cad',
         appearance: {
           theme: 'stripe',
         },

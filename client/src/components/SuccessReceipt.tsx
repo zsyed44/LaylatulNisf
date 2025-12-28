@@ -72,11 +72,11 @@ export default function SuccessReceipt({ registration }: SuccessReceiptProps) {
           <div className="bg-gradient-to-br from-gold-50 to-emerald-50 border-2 border-emerald-300 rounded-lg p-6 mb-6">
             <div className="flex justify-between items-center mb-2">
               <span className="text-neutral-700">Subtotal</span>
-              <span className="font-semibold">${total.toFixed(2)}</span>
+              <span className="font-semibold">${total.toFixed(2)} CAD</span>
             </div>
             <div className="flex justify-between items-center pt-2 border-t border-emerald-300">
               <span className="text-lg font-semibold text-neutral-900">Total Paid</span>
-              <span className="text-2xl font-bold bg-gradient-to-r from-gold-700 to-emerald-700 bg-clip-text text-transparent">${total.toFixed(2)}</span>
+              <span className="text-2xl font-bold bg-gradient-to-r from-gold-700 to-emerald-700 bg-clip-text text-transparent">${total.toFixed(2)} CAD</span>
             </div>
           </div>
 
