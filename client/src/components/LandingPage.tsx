@@ -54,7 +54,7 @@ export default function LandingPage({ onRegister }: LandingPageProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-emerald-50/30 to-neutral-50 overflow-x-hidden">
       {/* Logo in top corner */}
-      <div className="fixed top-6 right-6 z-50 w-12 h-12 md:w-16 md:h-16">
+      <div className="fixed top-4 right-4 md:top-6 md:right-6 z-50 w-10 h-10 md:w-16 md:h-16">
         <img 
           src="/logo.png" 
           alt="Laylatul Nisf" 
@@ -65,7 +65,7 @@ export default function LandingPage({ onRegister }: LandingPageProps) {
       {/* Register Button - Fixed in corner */}
       <button
         onClick={onRegister}
-        className="fixed top-6 left-6 z-50 px-6 py-3 bg-gradient-to-r from-emerald-700 to-emerald-800 text-white rounded-lg shadow-lg hover:shadow-xl hover:from-emerald-800 hover:to-emerald-900 transition-all duration-300 font-semibold text-sm md:text-base backdrop-blur-sm"
+        className="fixed top-4 left-4 md:top-6 md:left-6 z-50 px-4 py-2 md:px-6 md:py-3 bg-gradient-to-r from-emerald-700 to-emerald-800 text-white rounded-lg shadow-lg hover:shadow-xl hover:from-emerald-800 hover:to-emerald-900 transition-all duration-300 font-semibold text-xs md:text-base backdrop-blur-sm"
       >
         Register
       </button>
@@ -73,49 +73,48 @@ export default function LandingPage({ onRegister }: LandingPageProps) {
       {/* Hero Section */}
       <section 
         ref={heroRef}
-        className="relative min-h-screen flex items-center justify-center"
+        className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 md:px-12 lg:px-24 pt-20 pb-12 md:pt-24 md:pb-20"
         style={{
           transform: `translateY(${scrollY * 0.5}px)`,
           opacity: 1 - scrollY / 800,
-          padding: '4rem 6rem 8rem 6rem',
           overflow: 'visible',
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/10 via-transparent to-gold-900/10"></div>
-        <div className="relative z-10 w-full max-w-7xl mx-auto text-center" style={{ padding: '1rem 6rem 3rem 6rem', overflow: 'visible' }}>
-          <div style={{ overflow: 'visible', padding: '1rem 0 2rem 0' }}>
-            <h1 className="fleur-de-leah-regular text-6xl md:text-7xl lg:text-8xl xl:text-9xl leading-tight whitespace-nowrap" style={{ overflow: 'visible', margin: '1rem 0 1rem 0', lineHeight: '1.1' }}>
-              <span className="bg-gradient-to-r from-emerald-700 via-emerald-600 to-gold-600 bg-clip-text text-transparent inline-block" style={{ overflow: 'visible', display: 'inline-block', padding: '1rem 3rem' }}>
+        <div className="relative z-10 w-full max-w-7xl mx-auto text-center px-2 sm:px-4 md:px-12 lg:px-24" style={{ overflow: 'visible' }}>
+          <div style={{ overflow: 'visible', padding: '0.5rem 0 3rem 0' }} className="md:py-4 md:pb-12">
+            <h1 className="fleur-de-leah-regular text-4xl sm:text-5xl md:text-7xl lg:text-8xl xl:text-9xl md:whitespace-nowrap" style={{ overflow: 'visible', margin: '0.5rem 0 2rem 0', lineHeight: '1.4', paddingBottom: '1.5rem' }}>
+              <span className="animated-gradient inline-block px-2 sm:px-4 md:px-8 lg:px-12" style={{ overflow: 'visible', display: 'inline-block' }}>
                 Laylatul Nisf
               </span>
             </h1>
           </div>
-          <p className="text-xl md:text-2xl text-neutral-600 mb-4 font-light mt-2">
+          <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-neutral-600 mb-3 md:mb-4 font-light mt-1 md:mt-2 px-2">
             Celebrating the 15th of Sha'ban
           </p>
-          <div className="w-24 h-1 bg-gradient-to-r from-transparent via-emerald-600 to-transparent mx-auto mb-8"></div>
-          <p className="text-lg md:text-xl text-neutral-700 mb-12 max-w-2xl mx-auto leading-relaxed">
+          <div className="w-16 sm:w-20 md:w-24 h-1 bg-gradient-to-r from-transparent via-emerald-600 to-transparent mx-auto mb-6 md:mb-8"></div>
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-neutral-700 mb-8 md:mb-12 max-w-2xl mx-auto leading-relaxed px-4">
             Join us for a beautiful evening celebrating the birth of the 12th Imam, Imam Mahdi (AS). There will be food, games, and activities, for a night filled with spirituality, and fun.
           </p>
-          <div className="flex flex-col md:flex-row items-center justify-center gap-8 text-neutral-600">
-            <div className="flex items-center gap-3">
-              <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 text-neutral-600 px-4">
+            <div className="flex items-center gap-2 md:gap-3">
+              <svg className="w-4 h-4 md:w-5 md:h-5 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <span className="font-medium">Tuesday, January 30, 2025</span>
+              <span className="font-medium text-sm sm:text-base">Tuesday, January 30, 2025</span>
             </div>
-            <div className="flex items-center gap-3">
-              <svg className="w-5 h-5 text-gold-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center gap-2 md:gap-3">
+              <svg className="w-4 h-4 md:w-5 md:h-5 text-gold-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span className="font-medium">4:45 PM - 10:00 PM</span>
+              <span className="font-medium text-sm sm:text-base">4:45 PM - 10:00 PM</span>
             </div>
-            <div className="flex items-center gap-3">
-              <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center gap-2 md:gap-3">
+              <svg className="w-4 h-4 md:w-5 md:h-5 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              <span className="font-medium">L'Azzurra Banquet Hall, Vaughan</span>
+              <span className="font-medium text-sm sm:text-base text-center">L'Azzurra Banquet Hall, Vaughan</span>
             </div>
           </div>
         </div>

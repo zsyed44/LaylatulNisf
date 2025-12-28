@@ -71,6 +71,7 @@ function App() {
       if (path === '/register' || path === '/register/') {
         setViewState('form');
         setIsLoaded(true);
+        window.scrollTo({ top: 0, behavior: 'auto' });
         // Fetch PaymentIntent as soon as checkout page loads
         fetchPaymentIntent(1).catch((err) => {
           console.error('Error fetching payment intent:', err);
@@ -81,6 +82,7 @@ function App() {
       // Default to landing page
       setViewState('landing');
       setIsLoaded(true);
+      window.scrollTo({ top: 0, behavior: 'auto' });
       
       // Check for payment status from redirect (only on registration page)
       if (path.includes('register')) {
@@ -290,6 +292,79 @@ function App() {
       }, 100);
     }, 1000);
   };
+
+  // Function to handle route changes (defined after all functions it uses)
+  const handleRouteChange = () => {
+    const path = window.location.pathname;
+    const urlParams = new URLSearchParams(window.location.search);
+    const hash = window.location.hash;
+    
+    // Check if admin page is requested
+    if (urlParams.get('admin') === 'true' || hash === '#admin') {
+      // Check if user is already authenticated
+      const token = localStorage.getItem('adminToken');
+      if (token) {
+        // Verify token is still valid
+        verifyToken()
+          .then(() => {
+            setViewState('admin');
+            setIsLoaded(true);
+          })
+          .catch((err) => {
+            console.error('Token verification failed:', err);
+            // Token invalid, show login
+            setViewState('login');
+            setIsLoaded(true);
+          });
+      } else {
+        // No token, show login
+        setViewState('login');
+        setIsLoaded(true);
+      }
+      return;
+    }
+
+    // Check if registration page is requested
+    if (path === '/register' || path === '/register/') {
+      setViewState('form');
+      setIsLoaded(true);
+      window.scrollTo({ top: 0, behavior: 'auto' });
+      // Fetch PaymentIntent as soon as checkout page loads
+      fetchPaymentIntent(1).catch((err) => {
+        console.error('Error fetching payment intent:', err);
+      });
+      return;
+    }
+
+    // Default to landing page
+    setViewState('landing');
+    setIsLoaded(true);
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    
+    // Check for payment status from redirect (only on registration page)
+    if (path.includes('register')) {
+      checkPaymentStatus().catch((err) => {
+        console.error('Error checking payment status:', err);
+      });
+    }
+  };
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      setIsTransitioning(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => {
+        handleRouteChange();
+        setTimeout(() => {
+          setIsTransitioning(false);
+        }, 100);
+      }, 100);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Show login page
   if (viewState === 'login') {
