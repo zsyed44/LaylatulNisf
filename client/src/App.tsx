@@ -7,21 +7,23 @@ import RegistrationCard from './components/RegistrationCard';
 import SuccessReceipt from './components/SuccessReceipt';
 import AdminPage from './components/AdminPage';
 import LoginPage from './components/LoginPage';
+import LandingPage from './components/LandingPage';
 import { startCheckout, confirmCheckout, createPaymentIntent, verifyToken } from './api';
 import { getStripe } from './stripe';
 import type { RegistrationFormData, Registration } from './types';
 
-type ViewState = 'form' | 'success' | 'admin' | 'login';
+type ViewState = 'landing' | 'form' | 'success' | 'admin' | 'login';
 
 // Default ticket price
 const TICKET_PRICE = 60;
 
 function App() {
-  const [viewState, setViewState] = useState<ViewState>('form');
+  const [viewState, setViewState] = useState<ViewState>('landing');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [registration, setRegistration] = useState<Registration | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   
   // Payment state
   const [clientSecret, setClientSecret] = useState<string | null>(null);
@@ -35,10 +37,12 @@ function App() {
 
   useEffect(() => {
     try {
-      // Check if admin page is requested
+      // Check URL path to determine view
+      const path = window.location.pathname;
       const urlParams = new URLSearchParams(window.location.search);
       const hash = window.location.hash;
       
+      // Check if admin page is requested
       if (urlParams.get('admin') === 'true' || hash === '#admin') {
         // Check if user is already authenticated
         const token = localStorage.getItem('adminToken');
@@ -63,18 +67,27 @@ function App() {
         return;
       }
 
-      // Trigger fade-in animation on mount
+      // Check if registration page is requested
+      if (path === '/register' || path === '/register/') {
+        setViewState('form');
+        setIsLoaded(true);
+        // Fetch PaymentIntent as soon as checkout page loads
+        fetchPaymentIntent(1).catch((err) => {
+          console.error('Error fetching payment intent:', err);
+        });
+        return;
+      }
+
+      // Default to landing page
+      setViewState('landing');
       setIsLoaded(true);
       
-      // Check for payment status from redirect
-      checkPaymentStatus().catch((err) => {
-        console.error('Error checking payment status:', err);
-      });
-      
-      // Fetch PaymentIntent as soon as checkout page loads
-      fetchPaymentIntent(1).catch((err) => {
-        console.error('Error fetching payment intent:', err);
-      });
+      // Check for payment status from redirect (only on registration page)
+      if (path.includes('register')) {
+        checkPaymentStatus().catch((err) => {
+          console.error('Error checking payment status:', err);
+        });
+      }
     } catch (error) {
       console.error('Error in useEffect:', error);
       setIsLoaded(true);
@@ -242,6 +255,42 @@ function App() {
     setViewState('admin');
   };
 
+  // Handle navigation to registration with smooth transition
+  const handleNavigateToRegister = () => {
+    setIsTransitioning(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Fade out landing page (1s)
+    setTimeout(() => {
+      window.history.pushState({}, '', '/register');
+      setViewState('form');
+      window.scrollTo({ top: 0, behavior: 'auto' }); // Ensure we're at top
+      // Fetch PaymentIntent when navigating to registration
+      fetchPaymentIntent(1).catch((err) => {
+        console.error('Error fetching payment intent:', err);
+      });
+      // Start fade-in for registration page after a brief moment
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, 100); // Small delay to ensure DOM update, then fade in (0.75s)
+    }, 1000); // Fade out duration (1 seconds)
+  };
+
+  // Handle navigation back to landing page with smooth transition
+  const handleNavigateToLanding = () => {
+    setIsTransitioning(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Fade out registration page (1s)
+    setTimeout(() => {
+      window.history.pushState({}, '', '/');
+      setViewState('landing');
+      window.scrollTo({ top: 0, behavior: 'auto' }); // Ensure we're at top
+      // Start fade-in for landing page after a brief moment
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, 100);
+    }, 1000);
+  };
+
   // Show login page
   if (viewState === 'login') {
     return <LoginPage onLogin={handleLogin} />;
@@ -254,6 +303,15 @@ function App() {
 
   if (viewState === 'success' && registration) {
     return <SuccessReceipt registration={registration} />;
+  }
+
+  // Show landing page
+  if (viewState === 'landing') {
+    return (
+      <div className={`transition-opacity duration-[1000ms] ease-in-out ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
+        <LandingPage onRegister={handleNavigateToRegister} />
+      </div>
+    );
   }
 
   // Show loading state if not loaded yet
@@ -273,7 +331,22 @@ function App() {
 
   // Render content - always wrap in Elements provider since RegistrationCard uses Stripe hooks
   const content = (
-    <div className={`min-h-screen transition-opacity duration-[2000ms] ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
+    <div className={`min-h-screen transition-opacity duration-[1000ms] ease-in-out ${isLoaded && !isTransitioning ? 'opacity-100' : 'opacity-0'}`}>
+      {/* Logo in top corner - links back to landing page */}
+      <div className="fixed top-6 right-6 z-50 w-12 h-12 md:w-16 md:h-16 cursor-pointer" onClick={handleNavigateToLanding}>
+        <img 
+          src="/logo.png" 
+          alt="Laylatul Nisf" 
+          className="w-full h-full object-contain drop-shadow-lg opacity-90 hover:opacity-100 transition-opacity rounded-lg"
+        />
+      </div>
+      {/* Home button - links back to landing page */}
+      <button
+        onClick={handleNavigateToLanding}
+        className="fixed top-6 left-6 z-50 px-6 py-3 bg-gradient-to-r from-emerald-700 to-emerald-800 text-white rounded-lg shadow-lg hover:shadow-xl hover:from-emerald-800 hover:to-emerald-900 transition-all duration-300 font-semibold text-sm md:text-base backdrop-blur-sm"
+      >
+        Home
+      </button>
       <EventHero />
       
       <div className="max-w-7xl mx-auto px-4 py-12">

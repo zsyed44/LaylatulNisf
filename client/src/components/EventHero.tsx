@@ -8,7 +8,7 @@ export default function EventHero() {
           Laylatul Nisf
         </h1>
         <p className="text-xl md:text-2xl text-neutral-500 mb-8 font-light">
-          Celebrating the 15th of Sha'ban
+          Registration page
         </p>
         <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12 text-neutral-400">
           <div className="flex items-center gap-2 text-sm md:text-base whitespace-nowrap">
