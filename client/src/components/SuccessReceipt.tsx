@@ -81,7 +81,7 @@ export default function SuccessReceipt({ registration }: SuccessReceiptProps) {
           </div>
 
           <div className="bg-neutral-50 rounded-lg p-4 text-sm text-neutral-600">
-            <p className="mb-2">
+            <p>
               <strong>Status:</strong>{' '}
               <span className={`font-semibold ${
                 registration.status === 'paid' ? 'text-green-600' : 'text-yellow-600'
@@ -89,18 +89,17 @@ export default function SuccessReceipt({ registration }: SuccessReceiptProps) {
                 {registration.status === 'paid' ? 'Paid' : 'Pending Payment'}
               </span>
             </p>
-            <p>
-              A confirmation email has been sent to <strong>{registration.email}</strong>.
-              Please check your inbox (and spam folder) for details.
-            </p>
           </div>
 
           <div className="mt-8 pt-6 border-t border-neutral-200">
             <p className="text-neutral-600 mb-4">
               We look forward to seeing you on <strong>Tuesday, January 30, 6:00 PM</strong>
             </p>
+            <p className="text-sm text-neutral-500 mb-2">
+              Please keep a screenshot of this confirmation handy for your own personal reference.
+            </p>
             <p className="text-sm text-neutral-500">
-              If you have any questions, please contact us using the email provided in your confirmation.
+              If you have any questions, please contact the event organizers.
             </p>
           </div>
         </div>

@@ -8,6 +8,19 @@ if (!stripePublishableKey) {
   console.warn(
     'Warning: VITE_STRIPE_PUBLISHABLE_KEY is not set. Stripe functionality will not work.'
   );
+} else {
+  // Validate key format
+  const isTestMode = stripePublishableKey.startsWith('pk_test_');
+  const isLiveMode = stripePublishableKey.startsWith('pk_live_');
+  
+  if (!isTestMode && !isLiveMode) {
+    console.error(
+      'Error: VITE_STRIPE_PUBLISHABLE_KEY appears to be invalid. Stripe publishable keys should start with pk_test_ or pk_live_'
+    );
+  } else {
+    const mode = isTestMode ? 'TEST' : 'LIVE';
+    console.log(`[Stripe] Frontend using ${mode} mode`);
+  }
 }
 
 // Initialize Stripe

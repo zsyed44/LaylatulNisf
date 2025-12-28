@@ -6,9 +6,10 @@ interface RegistrationCardProps {
   onSubmit: (data: RegistrationFormData) => Promise<void>;
   isLoading: boolean;
   clientSecret: string | null;
+  onRefreshPaymentIntent?: () => void;
 }
 
-export default function RegistrationCard({ onSubmit, isLoading, clientSecret }: RegistrationCardProps) {
+export default function RegistrationCard({ onSubmit, isLoading, clientSecret, onRefreshPaymentIntent }: RegistrationCardProps) {
   // Store references to Stripe and Elements
   // These will be null if not wrapped in Elements provider (when clientSecret is not available)
   const stripe = useStripe();
@@ -73,6 +74,13 @@ export default function RegistrationCard({ onSubmit, isLoading, clientSecret }: 
         return;
       }
 
+      // Submit the form first - this validates the payment details
+      const { error: submitError } = await elements.submit();
+      if (submitError) {
+        setPaymentError(submitError.message || 'Payment form validation failed. Please check your payment details.');
+        return;
+      }
+
       // Confirm payment with Stripe
       const { error: confirmError } = await stripe.confirmPayment({
         elements,
@@ -85,7 +93,23 @@ export default function RegistrationCard({ onSubmit, isLoading, clientSecret }: 
 
       // Handle payment errors
       if (confirmError) {
-        // Payment failed - show error to user
+        // Check for test/live mode mismatch or PaymentIntent not found
+        const isKeyMismatch = (confirmError.message?.includes('test mode') && confirmError.message?.includes('live mode')) || 
+                              confirmError.message?.includes('No such payment_intent');
+        
+        if (isKeyMismatch) {
+          setPaymentError(
+            'The PaymentIntent was created with a different Stripe key. This happens when you change environment variables.\n\n' +
+            '⚠️ IMPORTANT: You must RESTART your development server (not just refresh the page)!\n\n' +
+            '1. Stop your server (Ctrl+C)\n' +
+            '2. Restart it (npm run dev or npm run dev:server)\n' +
+            '3. Then refresh this page (F5) to create a new PaymentIntent\n\n' +
+            'The server caches the Stripe instance, so changing .env requires a server restart.'
+          );
+          return;
+        }
+        
+        // Other payment errors
         setPaymentError(confirmError.message || 'Payment failed. Please try again.');
         return;
       }
@@ -237,7 +261,7 @@ export default function RegistrationCard({ onSubmit, isLoading, clientSecret }: 
           {/* Display payment errors */}
           {paymentError && (
             <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600">{paymentError}</p>
+              <p className="text-sm text-red-600 whitespace-pre-line">{paymentError}</p>
             </div>
           )}
         </div>

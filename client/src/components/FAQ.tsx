@@ -20,7 +20,7 @@ const faqs: FAQItem[] = [
   },
   {
     question: 'How do I receive my tickets?',
-    answer: 'You will receive a confirmation email with your registration details. No physical tickets are required—we will check you in by name at the door.',
+    answer: 'No physical tickets are required—we will check you in by name at the door. Please save your registration confirmation page for your records.',
   },
 ];
 

@@ -1,6 +1,6 @@
-// Confirm checkout - get registration
+// Confirm checkout - update registration status to paid
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getRegistration } from '../_lib/registrations.js';
+import { getRegistration, updateRegistrationStatus } from '../_lib/registrations.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
@@ -26,6 +26,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    // Check if registration exists
     const registration = await getRegistration(registrationId);
     if (!registration) {
       return res.status(404).json({
@@ -34,11 +35,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    // Update registration status to paid
+    await updateRegistrationStatus(registrationId, 'paid');
+
+    // Get the updated registration
+    const updatedRegistration = await getRegistration(registrationId);
+
     res.setHeader('Content-Type', 'application/json');
     res.status(200).json({
       success: true,
-      data: registration,
-      message: 'Registration confirmed',
+      data: updatedRegistration,
+      message: 'Registration confirmed and marked as paid',
     });
   } catch (error: any) {
     console.error('Error confirming checkout:', error);

@@ -17,8 +17,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(405).json({ error: 'Method not allowed' });
     }
 
+    // Check Stripe key mode for debugging
+    const secretKey = process.env.STRIPE_SECRET_KEY || '';
+    const secretKeyMode = secretKey.startsWith('sk_test_') ? 'TEST' : 
+                         secretKey.startsWith('sk_live_') ? 'LIVE' : 
+                         'UNKNOWN';
+    
     res.setHeader('Content-Type', 'application/json');
-    res.status(200).json({ ok: true });
+    res.status(200).json({ 
+      ok: true,
+      stripe: {
+        secretKeyMode,
+        hasSecretKey: !!secretKey,
+      }
+    });
   } catch (error: any) {
     console.error('Error in health check:', error);
     res.setHeader('Content-Type', 'application/json');

@@ -339,6 +339,13 @@ function App() {
                 onSubmit={handleSubmit} 
                 isLoading={isLoading} 
                 clientSecret={clientSecret}
+                onRefreshPaymentIntent={() => {
+                  // Clear current PaymentIntent and create a new one
+                  setClientSecret(null);
+                  // Get current quantity from the form (we'll need to track this)
+                  // For now, default to 1 - the form will trigger a new PaymentIntent when quantity changes
+                  fetchPaymentIntent(1);
+                }}
               />
               {error && (
                 <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
