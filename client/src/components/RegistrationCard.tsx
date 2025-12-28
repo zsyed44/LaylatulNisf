@@ -9,7 +9,7 @@ interface RegistrationCardProps {
   onRefreshPaymentIntent?: () => void;
 }
 
-export default function RegistrationCard({ onSubmit, isLoading, clientSecret, onRefreshPaymentIntent }: RegistrationCardProps) {
+export default function RegistrationCard({ onSubmit, isLoading, clientSecret, onRefreshPaymentIntent: _onRefreshPaymentIntent }: RegistrationCardProps) {
   // Store references to Stripe and Elements
   // These will be null if not wrapped in Elements provider (when clientSecret is not available)
   const stripe = useStripe();
