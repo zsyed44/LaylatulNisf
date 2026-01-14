@@ -250,7 +250,7 @@ export default function LandingPage({ onRegister }: LandingPageProps) {
             Ready to Join Us?
           </h2>
           <p className="text-xl text-emerald-100 mb-8 max-w-2xl mx-auto">
-            Secure your spot for this special evening. Tickets are $60 CAD per person.
+            Secure your spot for this special evening. Tickets are $45 CAD per person.
           </p>
           <button
             onClick={onRegister}

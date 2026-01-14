@@ -15,7 +15,7 @@ import type { RegistrationFormData, Registration } from './types';
 type ViewState = 'landing' | 'form' | 'success' | 'admin' | 'login';
 
 // Default ticket price
-const TICKET_PRICE = 60;
+const TICKET_PRICE = 45;
 
 function App() {
   const [viewState, setViewState] = useState<ViewState>('landing');

@@ -122,7 +122,7 @@ export default function RegistrationCard({ onSubmit, isLoading, clientSecret, on
     }
   };
 
-  const ticketPrice = 60;
+  const ticketPrice = 45;
   const total = formData.qty * ticketPrice;
 
   return (

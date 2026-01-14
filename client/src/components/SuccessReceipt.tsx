@@ -5,7 +5,7 @@ interface SuccessReceiptProps {
 }
 
 export default function SuccessReceipt({ registration }: SuccessReceiptProps) {
-  const ticketPrice = 60;
+  const ticketPrice = 45;
   const total = registration.qty * ticketPrice;
 
   return (

@@ -60,7 +60,7 @@ export default function AdminPage() {
     totalTickets: registrations.reduce((sum, r) => sum + r.qty, 0),
     totalRevenue: registrations
       .filter((r) => r.status === 'paid')
-      .reduce((sum, r) => sum + r.qty * 60, 0),
+      .reduce((sum, r) => sum + r.qty * 45, 0),
   };
 
   const formatDate = (dateString: string) => {
@@ -251,7 +251,7 @@ export default function AdminPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
-                        ${(reg.qty * 60).toFixed(2)} CAD
+                        ${(reg.qty * 45).toFixed(2)} CAD
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">
                         {formatDate(reg.createdAt)}
