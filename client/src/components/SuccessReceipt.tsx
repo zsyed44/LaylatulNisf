@@ -93,7 +93,7 @@ export default function SuccessReceipt({ registration }: SuccessReceiptProps) {
 
           <div className="mt-8 pt-6 border-t border-neutral-200">
             <p className="text-neutral-600 mb-4">
-              We look forward to seeing you on <strong>Tuesday, January 30, 6:00 PM</strong>
+              We look forward to seeing you on <strong>Friday, January 30, 4:45 PM</strong>
             </p>
             <p className="text-sm text-neutral-500 mb-2">
               Please keep a screenshot of this confirmation handy for your own personal reference.
