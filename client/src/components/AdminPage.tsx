@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAllRegistrations, updateCheckedInStatus } from '../api';
+import { getAllRegistrations } from '../api';
 import type { Registration } from '../types';
 
 export default function AdminPage() {
@@ -8,7 +8,7 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'paid' | 'pending'>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [updatingCheckIn, setUpdatingCheckIn] = useState<number | null>(null);
+  const [checkedInIds, setCheckedInIds] = useState<Set<number>>(new Set());
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
@@ -16,6 +16,16 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
+    // Load checked-in IDs from localStorage first
+    const savedCheckedIn = localStorage.getItem('checkedInIds');
+    if (savedCheckedIn) {
+      try {
+        const ids = JSON.parse(savedCheckedIn);
+        setCheckedInIds(new Set(ids));
+      } catch (e) {
+        console.error('Error loading checked-in IDs:', e);
+      }
+    }
     loadRegistrations();
   }, []);
 
@@ -33,8 +43,14 @@ export default function AdminPage() {
     }
   };
 
+  // Merge checked-in state with registrations for display
+  const registrationsWithCheckIn = registrations.map((reg) => ({
+    ...reg,
+    checkedIn: checkedInIds.has(reg.id),
+  }));
+
   // Filter and search registrations
-  const filteredRegistrations = registrations.filter((reg) => {
+  const filteredRegistrations = registrationsWithCheckIn.filter((reg) => {
     // Status filter
     if (filter !== 'all' && reg.status !== filter) {
       return false;
@@ -58,7 +74,7 @@ export default function AdminPage() {
     total: registrations.length,
     paid: registrations.filter((r) => r.status === 'paid').length,
     pending: registrations.filter((r) => r.status === 'pending').length,
-    checkedIn: registrations.filter((r) => r.checkedIn).length,
+    checkedIn: checkedInIds.size,
     totalTickets: registrations.reduce((sum, r) => sum + r.qty, 0),
     totalRevenue: registrations
       .filter((r) => r.status === 'paid')
@@ -75,20 +91,16 @@ export default function AdminPage() {
     });
   };
 
-  const handleCheckInToggle = async (registration: Registration) => {
-    setUpdatingCheckIn(registration.id);
-    try {
-      const updated = await updateCheckedInStatus(registration.id, !registration.checkedIn);
-      // Update the registration in the local state
-      setRegistrations((prev) =>
-        prev.map((reg) => (reg.id === registration.id ? updated : reg))
-      );
-    } catch (err: any) {
-      setError(err.message || 'Failed to update check-in status');
-      console.error('Error updating check-in status:', err);
-    } finally {
-      setUpdatingCheckIn(null);
+  const handleCheckInToggle = (registration: Registration) => {
+    const newCheckedInIds = new Set(checkedInIds);
+    if (checkedInIds.has(registration.id)) {
+      newCheckedInIds.delete(registration.id);
+    } else {
+      newCheckedInIds.add(registration.id);
     }
+    setCheckedInIds(newCheckedInIds);
+    // Save to localStorage
+    localStorage.setItem('checkedInIds', JSON.stringify(Array.from(newCheckedInIds)));
   };
 
   if (isLoading) {
@@ -254,8 +266,7 @@ export default function AdminPage() {
                           type="checkbox"
                           checked={reg.checkedIn || false}
                           onChange={() => handleCheckInToggle(reg)}
-                          disabled={updatingCheckIn === reg.id}
-                          className="w-5 h-5 text-emerald-600 border-neutral-300 rounded focus:ring-emerald-500 focus:ring-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-5 h-5 text-emerald-600 border-neutral-300 rounded focus:ring-emerald-500 focus:ring-2 cursor-pointer"
                         />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
