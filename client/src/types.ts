@@ -17,6 +17,7 @@ export interface Registration {
   dietary: string | null;
   notes: string | null;
   status: 'pending' | 'paid';
+  checkedIn: boolean;
   createdAt: string;
 }
 

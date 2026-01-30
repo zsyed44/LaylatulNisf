@@ -8,11 +8,12 @@ import SuccessReceipt from './components/SuccessReceipt';
 import AdminPage from './components/AdminPage';
 import LoginPage from './components/LoginPage';
 import LandingPage from './components/LandingPage';
+import RegistrationsClosed from './components/RegistrationsClosed';
 import { startCheckout, confirmCheckout, createPaymentIntent, verifyToken } from './api';
 import { getStripe } from './stripe';
 import type { RegistrationFormData, Registration } from './types';
 
-type ViewState = 'landing' | 'form' | 'success' | 'admin' | 'login';
+type ViewState = 'landing' | 'form' | 'closed' | 'success' | 'admin' | 'login';
 
 // Default ticket price
 const TICKET_PRICE = 45;
@@ -67,17 +68,13 @@ function App() {
         return;
       }
 
-      // Check if registration page is requested
-      if (path === '/register' || path === '/register/') {
-        setViewState('form');
-        setIsLoaded(true);
-        window.scrollTo({ top: 0, behavior: 'auto' });
-        // Fetch PaymentIntent as soon as checkout page loads
-        fetchPaymentIntent(1).catch((err) => {
-          console.error('Error fetching payment intent:', err);
-        });
-        return;
-      }
+    // Check if registration page is requested - now show closed page
+    if (path === '/register' || path === '/register/') {
+      setViewState('closed');
+      setIsLoaded(true);
+      window.scrollTo({ top: 0, behavior: 'auto' });
+      return;
+    }
 
       // Default to landing page
       setViewState('landing');
@@ -264,13 +261,9 @@ function App() {
     // Fade out landing page (1s)
     setTimeout(() => {
       window.history.pushState({}, '', '/register');
-      setViewState('form');
+      setViewState('closed');
       window.scrollTo({ top: 0, behavior: 'auto' }); // Ensure we're at top
-      // Fetch PaymentIntent when navigating to registration
-      fetchPaymentIntent(1).catch((err) => {
-        console.error('Error fetching payment intent:', err);
-      });
-      // Start fade-in for registration page after a brief moment
+      // Start fade-in for closed page after a brief moment
       setTimeout(() => {
         setIsTransitioning(false);
       }, 100); // Small delay to ensure DOM update, then fade in (0.75s)
@@ -324,15 +317,11 @@ function App() {
       return;
     }
 
-    // Check if registration page is requested
+    // Check if registration page is requested - now show closed page
     if (path === '/register' || path === '/register/') {
-      setViewState('form');
+      setViewState('closed');
       setIsLoaded(true);
       window.scrollTo({ top: 0, behavior: 'auto' });
-      // Fetch PaymentIntent as soon as checkout page loads
-      fetchPaymentIntent(1).catch((err) => {
-        console.error('Error fetching payment intent:', err);
-      });
       return;
     }
 
@@ -378,6 +367,15 @@ function App() {
 
   if (viewState === 'success' && registration) {
     return <SuccessReceipt registration={registration} />;
+  }
+
+  // Show registrations closed page
+  if (viewState === 'closed') {
+    return (
+      <div className={`transition-opacity duration-[1000ms] ease-in-out ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
+        <RegistrationsClosed />
+      </div>
+    );
   }
 
   // Show landing page

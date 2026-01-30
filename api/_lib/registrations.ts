@@ -15,7 +15,7 @@ export async function createRegistration(data: RegistrationInput): Promise<Regis
   const query = `
     INSERT INTO registrations (name, email, phone, qty, dietary, notes, status)
     VALUES ($1, $2, $3, $4, $5, $6, 'pending')
-    RETURNING id, name, email, phone, qty, dietary, notes, status, created_at
+    RETURNING id, name, email, phone, qty, dietary, notes, status, checked_in, created_at
   `;
 
   const result = await pool.query<RegistrationRow>(query, [
@@ -54,5 +54,11 @@ export async function updateRegistrationStatus(id: number, status: 'pending' | '
   const pool = getDbPool();
   const query = 'UPDATE registrations SET status = $1 WHERE id = $2';
   await pool.query(query, [status, id]);
+}
+
+export async function updateCheckedInStatus(id: number, checkedIn: boolean): Promise<void> {
+  const pool = getDbPool();
+  const query = 'UPDATE registrations SET checked_in = $1 WHERE id = $2';
+  await pool.query(query, [checkedIn, id]);
 }
 

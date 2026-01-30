@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS registrations (
   dietary TEXT,
   notes TEXT,
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid')),
+  checked_in BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 

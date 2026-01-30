@@ -29,6 +29,7 @@ export interface RegistrationRow {
   dietary: string | null;
   notes: string | null;
   status: 'pending' | 'paid';
+  checked_in: boolean;
   created_at: Date;
 }
 
@@ -41,6 +42,7 @@ export interface Registration {
   dietary: string | null;
   notes: string | null;
   status: 'pending' | 'paid';
+  checkedIn: boolean;
   createdAt: string; // ISO string
 }
 
@@ -55,6 +57,7 @@ export function mapRegistrationRow(row: RegistrationRow): Registration {
     dietary: row.dietary,
     notes: row.notes,
     status: row.status,
+    checkedIn: row.checked_in ?? false,
     createdAt: row.created_at.toISOString(),
   };
 }

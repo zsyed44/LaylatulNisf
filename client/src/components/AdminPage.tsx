@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAllRegistrations } from '../api';
+import { getAllRegistrations, updateCheckedInStatus } from '../api';
 import type { Registration } from '../types';
 
 export default function AdminPage() {
@@ -8,6 +8,7 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'paid' | 'pending'>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [updatingCheckIn, setUpdatingCheckIn] = useState<number | null>(null);
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
@@ -57,6 +58,7 @@ export default function AdminPage() {
     total: registrations.length,
     paid: registrations.filter((r) => r.status === 'paid').length,
     pending: registrations.filter((r) => r.status === 'pending').length,
+    checkedIn: registrations.filter((r) => r.checkedIn).length,
     totalTickets: registrations.reduce((sum, r) => sum + r.qty, 0),
     totalRevenue: registrations
       .filter((r) => r.status === 'paid')
@@ -71,6 +73,22 @@ export default function AdminPage() {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const handleCheckInToggle = async (registration: Registration) => {
+    setUpdatingCheckIn(registration.id);
+    try {
+      const updated = await updateCheckedInStatus(registration.id, !registration.checkedIn);
+      // Update the registration in the local state
+      setRegistrations((prev) =>
+        prev.map((reg) => (reg.id === registration.id ? updated : reg))
+      );
+    } catch (err: any) {
+      setError(err.message || 'Failed to update check-in status');
+      console.error('Error updating check-in status:', err);
+    } finally {
+      setUpdatingCheckIn(null);
+    }
   };
 
   if (isLoading) {
@@ -115,7 +133,7 @@ export default function AdminPage() {
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
           <div className="bg-white rounded-lg shadow p-6 border border-neutral-200">
             <div className="text-sm text-neutral-600 mb-1">Total Registrations</div>
             <div className="text-3xl font-bold text-neutral-900">{stats.total}</div>
@@ -128,13 +146,17 @@ export default function AdminPage() {
             <div className="text-sm text-yellow-700 mb-1">Pending</div>
             <div className="text-3xl font-bold text-yellow-800">{stats.pending}</div>
           </div>
+          <div className="bg-emerald-50 rounded-lg shadow p-6 border border-emerald-200">
+            <div className="text-sm text-emerald-700 mb-1">Checked In</div>
+            <div className="text-3xl font-bold text-emerald-800">{stats.checkedIn}</div>
+          </div>
           <div className="bg-blue-50 rounded-lg shadow p-6 border border-blue-200">
             <div className="text-sm text-blue-700 mb-1">Total Tickets</div>
             <div className="text-3xl font-bold text-blue-800">{stats.totalTickets}</div>
           </div>
-          <div className="bg-emerald-50 rounded-lg shadow p-6 border border-emerald-200">
-            <div className="text-sm text-emerald-700 mb-1">Revenue</div>
-            <div className="text-3xl font-bold text-emerald-800">${stats.totalRevenue.toFixed(2)} CAD</div>
+          <div className="bg-purple-50 rounded-lg shadow p-6 border border-purple-200">
+            <div className="text-sm text-purple-700 mb-1">Revenue</div>
+            <div className="text-3xl font-bold text-purple-800">${stats.totalRevenue.toFixed(2)} CAD</div>
           </div>
         </div>
 
@@ -184,6 +206,9 @@ export default function AdminPage() {
               <thead className="bg-neutral-100 border-b border-neutral-200">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
+                    Check In
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
                     ID
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
@@ -215,7 +240,7 @@ export default function AdminPage() {
               <tbody className="bg-white divide-y divide-neutral-200">
                 {filteredRegistrations.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-6 py-8 text-center text-neutral-500">
+                    <td colSpan={10} className="px-6 py-8 text-center text-neutral-500">
                       {searchTerm || filter !== 'all'
                         ? 'No registrations match your filters'
                         : 'No registrations found'}
@@ -223,7 +248,16 @@ export default function AdminPage() {
                   </tr>
                 ) : (
                   filteredRegistrations.map((reg) => (
-                    <tr key={reg.id} className="hover:bg-neutral-50">
+                    <tr key={reg.id} className={`hover:bg-neutral-50 ${reg.checkedIn ? 'bg-green-50' : ''}`}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          checked={reg.checkedIn || false}
+                          onChange={() => handleCheckInToggle(reg)}
+                          disabled={updatingCheckIn === reg.id}
+                          className="w-5 h-5 text-emerald-600 border-neutral-300 rounded focus:ring-emerald-500 focus:ring-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        />
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
                         #{reg.id}
                       </td>

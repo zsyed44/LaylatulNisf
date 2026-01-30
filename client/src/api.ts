@@ -244,3 +244,47 @@ export async function verifyToken(): Promise<{ success: boolean; data: { usernam
   }
 }
 
+export async function updateCheckedInStatus(registrationId: number, checkedIn: boolean): Promise<Registration> {
+  const token = localStorage.getItem('adminToken');
+  
+  if (!token) {
+    throw new Error('Authentication required');
+  }
+
+  const response = await fetch(`${API_BASE}/registrations/check-in`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ registrationId, checkedIn }),
+  });
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      localStorage.removeItem('adminToken');
+      throw new Error('Session expired. Please login again.');
+    }
+    let errorMessage = 'Failed to update checked-in status';
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorMessage;
+    } catch (e) {
+      errorMessage = response.statusText || `HTTP ${response.status}: Failed to update checked-in status`;
+    }
+    throw new Error(errorMessage);
+  }
+
+  const text = await response.text();
+  if (!text) {
+    throw new Error('Empty response from server');
+  }
+  
+  try {
+    const result = JSON.parse(text);
+    return result.data;
+  } catch (e) {
+    throw new Error('Invalid JSON response from server');
+  }
+}
+
